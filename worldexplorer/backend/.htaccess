@@ -1,7 +1,16 @@
 # Disable rewrite engine for backend directory
-RewriteEngine Off
+RewriteEngine On
 
 # Protect config.php
 <Files "config.php">
     Require all denied
 </Files>
+
+# Serve existing files as-is
+RewriteCond %{REQUEST_FILENAME} -f [L]
+
+# Allow "/backend/foo" to resolve to "/backend/foo.php" when it exists
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.+)$ $1.php [L]

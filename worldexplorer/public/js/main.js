@@ -87,19 +87,57 @@
   if (window.__AL_MAIN_READY__) return;
   window.__AL_MAIN_READY__ = true;
 
-  function onReady() {
-    document.body.dataset.alReady = '1';
-    console.log('WorldExplorer client booted.');
-    document.dispatchEvent(new CustomEvent('al:client:ready'));
+  const base = (function () {
+    const p = window.location.pathname || '/';
+    const idx = p.indexOf('/index.php');
+    return idx >= 0 ? p.slice(0, idx) : '';
+  })();
+
+  const status = (id, msg) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = msg || '';
+  };
+
+  async function apiAuth(action, payload) {
+    const res = await fetch(`${base}/backend/api/auth.php`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', onReady, { once: true });
-  } else {
-    onReady();
-  }
+  document.getElementById('al-login-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status('login-status', 'Signing in...');
+    const fd = new FormData(e.target);
+    try {
+      const j = await apiAuth('login', { username: fd.get('username'), password: fd.get('password') });
+      status('login-status', j.error ? `Error: ${j.error}` : 'Logged in. Reloading...');
+      if (!j.error) location.reload();
+    } catch (err) {
+      status('login-status', `Login failed: ${err.message}`);
+    }
+  });
 
-  // Basic error surface so silent failures don’t hide in the console
+  document.getElementById('al-register-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status('register-status', 'Registering...');
+    const fd = new FormData(e.target);
+    try {
+      const j = await apiAuth('register', {
+        username: fd.get('username'),
+        email: fd.get('email'),
+        password: fd.get('password')
+      });
+      status('register-status', j.error ? `Error: ${j.error}` : 'Registered. Check email or login.');
+    } catch (err) {
+      status('register-status', `Register failed: ${err.message}`);
+    }
+  });
+
   window.addEventListener('unhandledrejection', (e) => {
     console.warn('Unhandled promise rejection:', e.reason);
   });
