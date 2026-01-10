@@ -1,0 +1,109 @@
+/* Afterlight styles */
+html, body, .al-root { height: 100%; }
+body.al-body { margin:0; background: var(--al-bg); color: var(--al-fg); overflow:hidden; }
+.al-root { position: relative; width:100%; }
+.al-canvas { position:absolute; inset:0; }
+.al-adminbar { position: absolute; top:0; left:0; right:0; height:32px; background:#23282d; color:#cfd7df; font-size:12px; z-index: 50; display:flex; align-items:center; }
+.al-adminbar .ab-site{ color:#fff; text-decoration:none; font-weight:600; }
+.al-adminbar .ab-link{ color:#cfd7df; text-decoration:none; }
+.al-adminbar a:hover{ color:#ffffff; }
+.al-hud { position:absolute; left:0; right:0; top:0; padding:8px; pointer-events: none; }
+body.has-adminbar .al-hud { top:36px; }
+.al-hud .btn, .al-hud a { pointer-events: auto; }
+.al-panel { position:absolute; right:16px; top:64px; width:420px; max-height:60%; overflow:auto; display:none; background:#151821; color:#e1e6ef; }
+.al-chat { position:absolute; left:16px; bottom:16px; width:380px; max-height:40%; overflow:auto; }
+.al-chat-log { height:220px; overflow:auto; background:#0f1115; padding:8px; border-radius:4px; }
+.al-console-log { height:180px; overflow:auto; background:#0f1115; padding:8px; border-radius:4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
+.al-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.6); }
+.al-overlay-inner { width: min(96%, 520px); }
+
+/* Minimap */
+.al-minimap { position:absolute; right:16px; bottom:16px; width:160px; height:160px; background:#0b0d12; border:1px solid #2a2f3a; border-radius:4px; overflow:hidden; z-index: 20; }
+.al-minimap canvas { width:100%; height:100%; display:block; }
+
+/* Mobile D-Pad */
+.al-dpad { position:absolute; left:16px; bottom:16px; width:140px; height:140px; display:none; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap:6px; z-index: 30; }
+.al-dpad button { background:#1c2230; color:#e1e6ef; border:1px solid #2a2f3a; border-radius:6px; }
+@media (max-width: 768px) {
+  .al-dpad { display:grid; }
+}
+
+/* Inventory grid */
+#inventory-grid .slot { background:#0f1115; border:1px solid #2a2f3a; aspect-ratio:1/1; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#94a3b8; }
+#inventory-grid .slot .icon { font-size:22px; }
+
+/* Dynamic theme hooks */
+:root {
+  --al-bg: #0f1115;
+  --al-panel: #171a22;
+  --al-fg: #e1e6ef;
+  --al-accent: #4cc9f0;
+  --al-muted: #9aa4b5;
+  --bg: #0f1115;
+  --panel: #171a22;
+  --fg: #e1e6ef;
+  --accent: #4cc9f0;
+  --muted: #9aa4b5;
+}
+.text-accent { color: var(--al-accent) !important; }
+.bg-accent { background: var(--al-accent) !important; }
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+main {
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, rgba(76, 201, 240, 0.08), transparent 35%), var(--bg);
+}
+
+.panel, .card {
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: var(--fg);
+  background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+.btn:hover { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(76,201,240,0.25); transform: translateY(-1px); }
+.btn.primary { background: linear-gradient(145deg, #4cc9f0, #2d9fd9); color: #0b0d12; border-color: transparent; }
+.btn.ghost { background: transparent; border-color: rgba(255,255,255,0.08); }
+
+.muted { color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 0.75rem; }
+.row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+.log-box {
+  background: #0b0d12;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+  max-height: 240px;
+  overflow: auto;
+}
+
+/* Mobile tweaks */
+@media (max-width: 768px) {
+  .al-panel { left: 8px; right: 8px; width:auto; top: 80px; }
+  .al-chat { left:8px; right:8px; width:auto; }
+}

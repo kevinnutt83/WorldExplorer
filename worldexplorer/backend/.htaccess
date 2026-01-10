@@ -1,0 +1,7 @@
+# Disable rewrite engine for backend directory
+RewriteEngine Off
+
+# Protect config.php
+<Files "config.php">
+    Require all denied
+</Files>

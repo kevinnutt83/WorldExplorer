@@ -1,0 +1,48 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Prevent backend/* from being rewritten
+# Completely exclude backend directory
+RewriteCond %{REQUEST_URI} ^/worldexplorer/backend/ [OR]
+RewriteCond %{REQUEST_URI} ^/backend/
+RewriteRule ^ - [L]
+
+# Allow direct file access
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Optional: Route non-existent files to index.php (if needed for SPA)
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Default index
+DirectoryIndex index.php
+
+# Protect sensitive files
+<FilesMatch "^(\.env|\.git|composer\.(json|lock)|\.htaccess)$">
+    Require all denied
+</FilesMatch>
+
+<Files "backend/config.php">
+  Require all denied
+</Files>
+
+# Only rewrite if file doesn't exist AND not in backend/
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/backend/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Serve existing files/directories as-is
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Fallback to index.php for SPA-style routes
+RewriteRule ^ index.php [L]
