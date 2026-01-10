@@ -48,19 +48,15 @@ if ($stmt->num_rows > 0) {
 }
 $stmt->close();
 
-// Check if first user
+// First user becomes admin, others player
 $countStmt = $conn->query("SELECT COUNT(*) as cnt FROM users");
 $row = $countStmt->fetch_assoc();
 $isFirstUser = ($row['cnt'] == 0);
-$needsVerification = !$isFirstUser;
-
-$verifyToken = $needsVerification ? bin2hex(random_bytes(32)) : null;
-$verified = $isFirstUser ? 1 : 0;
-$role = $isFirstUser ? 'admin' : 'user';
+$role = $isFirstUser ? 'admin' : 'player';
 
 $hash = password_hash($password, PASSWORD_BCRYPT);
-$stmt = $conn->prepare("INSERT INTO users (username, email, password, name, phone, birth, role, verified, verify_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param('sssssssss', $username, $email, $hash, $name, $phone, $birth, $role, $verified, $verifyToken);
+$stmt = $conn->prepare("INSERT INTO users (username, email, passhash, role, name, phone, birth) VALUES (?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param('sssssss', $username, $email, $hash, $role, $name, $phone, $birth);
 
 if (!$stmt->execute()) {
     http_response_code(500);
@@ -72,19 +68,6 @@ if (!$stmt->execute()) {
 $userId = $stmt->insert_id;
 $stmt->close();
 
-// Send verification email
-if ($needsVerification && $verifyToken) {
-    global $AFTERLIGHT_CONFIG;
-    $baseUrl = $AFTERLIGHT_CONFIG['base_url'] ?? '';
-    $verifyLink = $baseUrl . '/backend/api/verify?token=' . $verifyToken;
-    
-    $subject = 'Verify your Afterlight account';
-    $message = "Welcome to Afterlight!\n\nPlease click the link below to verify your email:\n\n" . $verifyLink . "\n\nIf you didn't create this account, please ignore this email.";
-    $headers = 'From: noreply@afterlight.game' . "\r\n" . 'Reply-To: noreply@afterlight.game';
-    
-    @mail($email, $subject, $message, $headers);
-}
-
 // Auto-login first user
 if ($isFirstUser) {
     session_start();
@@ -94,6 +77,6 @@ if ($isFirstUser) {
     echo json_encode(['ok'=>true,'user'=>$user,'needsVerification'=>false]);
 } else {
     ob_clean();
-    echo json_encode(['ok'=>true,'needsVerification'=>true]);
+    echo json_encode(['ok'=>true,'needsVerification'=>false]);
 }
 exit;

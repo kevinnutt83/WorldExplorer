@@ -122,7 +122,7 @@ function authed_user() {
     if (!isset($_SESSION['user_id'])) return null;
     
     $conn = db();
-    $stmt = $conn->prepare("SELECT id, username, email, role, verified FROM users WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id, username, email, role FROM users WHERE id = ?");
     $stmt->bind_param('i', $_SESSION['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -132,7 +132,9 @@ function authed_user() {
         return null;
     }
     
-    return $result->fetch_assoc();
+    $row = $result->fetch_assoc();
+    $row['verified'] = $row['verified'] ?? 1; // default if column absent
+    return $row;
 }
 
 function is_admin_or_super($user) {

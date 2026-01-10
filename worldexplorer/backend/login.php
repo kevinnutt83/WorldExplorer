@@ -23,7 +23,7 @@ if (!$username_or_email || !$password) {
 }
 
 $conn = db();
-$stmt = $conn->prepare("SELECT id, username, email, password, role, verified FROM users WHERE username = ? OR email = ?");
+$stmt = $conn->prepare("SELECT id, username, email, passhash, role FROM users WHERE username = ? OR email = ? LIMIT 1");
 $stmt->bind_param('ss', $username_or_email, $username_or_email);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -38,17 +38,10 @@ if ($result->num_rows === 0) {
 $user = $result->fetch_assoc();
 $stmt->close();
 
-if (!password_verify($password, $user['password'])) {
+if (!password_verify($password, $user['passhash'])) {
     http_response_code(401);
     ob_clean();
     echo json_encode(['error' => 'Invalid credentials']);
-    exit;
-}
-
-if (!$user['verified']) {
-    http_response_code(403);
-    ob_clean();
-    echo json_encode(['error' => 'Please verify your email before logging in']);
     exit;
 }
 
@@ -56,8 +49,8 @@ if (!$user['verified']) {
 session_start();
 $_SESSION['user_id'] = $user['id'];
 
-// Return user data (exclude password)
-unset($user['password']);
+// Return user data (exclude hash)
+unset($user['passhash']);
 $user['isAdmin'] = is_admin_or_super($user);
 
 ob_clean();
