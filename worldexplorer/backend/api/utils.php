@@ -70,6 +70,15 @@ function db() {
     static $conn = null;
     
     if ($conn === null) {
+        // Ensure mysqli extension is available before attempting connection
+        if (!class_exists('mysqli')) {
+            if (ob_get_level()) ob_clean();
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['ok'=>false,'error'=>'PHP mysqli extension is missing. Enable it or re-run installer.']);
+            exit;
+        }
+
         // Load config if not already loaded
         if (!isset($AFTERLIGHT_CONFIG)) {
             $configPath = __DIR__ . '/../config.php';
