@@ -3,7 +3,8 @@ require_once __DIR__ . '/../config.php';
 // Validate config presence early to avoid undefined offset errors
 if (!isset($AFTERLIGHT_CONFIG) || !is_array($AFTERLIGHT_CONFIG)){
   header('Content-Type: application/json');
-  al_log('error', 'config', 'Config missing or invalid', []);
+  // al_log is not yet defined here; use error_log to avoid fatal errors
+  error_log('Afterlight config missing or invalid');
   http_response_code(500);
   echo json_encode(['ok'=>false,'error'=>'Configuration missing. Run installer.']);
   exit;
