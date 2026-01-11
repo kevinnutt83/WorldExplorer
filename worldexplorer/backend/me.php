@@ -10,7 +10,7 @@ $user = authed_user();
 if (!$user) {
     http_response_code(401);
     ob_clean();
-    echo json_encode(['error' => 'Not authenticated']);
+    echo json_encode(['error' => 'Not authenticated or schema missing']);
     exit;
 }
 

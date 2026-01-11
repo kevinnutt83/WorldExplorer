@@ -37,6 +37,12 @@ $conn = db();
 
 // Check existing
 $stmt = $conn->prepare("SELECT id FROM users WHERE username=? OR email=?");
+if (!$stmt) {
+    http_response_code(500);
+    ob_clean();
+    echo json_encode(['ok'=>false,'error'=>'Registration unavailable: database schema missing. Run installer/migrate.']);
+    exit;
+}
 $stmt->bind_param('ss', $username, $email);
 $stmt->execute();
 $stmt->store_result();

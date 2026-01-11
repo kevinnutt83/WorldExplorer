@@ -24,6 +24,12 @@ if (!$username_or_email || !$password) {
 
 $conn = db();
 $stmt = $conn->prepare("SELECT id, username, email, passhash, role FROM users WHERE username = ? OR email = ? LIMIT 1");
+if (!$stmt) {
+    http_response_code(500);
+    ob_clean();
+    echo json_encode(['error' => 'Login unavailable: database schema missing. Run installer/migrate.']);
+    exit;
+}
 $stmt->bind_param('ss', $username_or_email, $username_or_email);
 $stmt->execute();
 $result = $stmt->get_result();

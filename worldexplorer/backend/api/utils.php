@@ -100,9 +100,42 @@ function db() {
         }
         
         $conn->set_charset('utf8mb4');
+
+        // Ensure core schema exists (users table) or attempt migration once
+        if (!afterlight_ensure_schema($conn)) {
+            if (ob_get_level()) ob_clean();
+            header('Content-Type: application/json');
+            http_response_code(500);
+            die(json_encode(['ok' => false, 'error' => 'Database schema missing or migration incomplete. Run installer/migrate.']));
+        }
     }
     
     return $conn;
+}
+
+/**
+ * Verify core tables exist; if missing, attempt to run migrations once.
+ */
+function afterlight_ensure_schema(mysqli $conn): bool {
+    static $checked = null;
+    if ($checked !== null) return $checked;
+    $checked = false;
+    $res = @$conn->query("SHOW TABLES LIKE 'users'");
+    if ($res && $res->num_rows > 0) { $checked = true; return true; }
+
+    // Try running migrations using existing connection (best effort)
+    $ok = false;
+    $migratePath = __DIR__ . '/../db/migrate.php';
+    if (is_file($migratePath)) {
+        require_once $migratePath;
+        if (function_exists('afterlight_migrate_database')) {
+            try { $ok = afterlight_migrate_database($conn); } catch (Throwable $e) { al_log('error','db','Migration failed', ['err'=>$e->getMessage()]); }
+        } elseif (function_exists('afterlight_run_migrations')) {
+            try { $ok = afterlight_run_migrations(); } catch (Throwable $e) { al_log('error','db','Migration failed', ['err'=>$e->getMessage()]); }
+        }
+    }
+    $checked = $ok;
+    return $ok;
 }
 
 function json_out($data) {
@@ -123,6 +156,7 @@ function authed_user() {
     
     $conn = db();
     $stmt = $conn->prepare("SELECT id, username, email, role FROM users WHERE id = ?");
+    if (!$stmt) { al_log('error','db','Prepare failed in authed_user', ['error'=>$conn->error]); return null; }
     $stmt->bind_param('i', $_SESSION['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();
