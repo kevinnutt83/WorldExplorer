@@ -35,6 +35,12 @@ if (!$stmt) {
 $stmt->bind_param('ss', $username_or_email, $username_or_email);
 $stmt->execute();
 $result = $stmt->get_result();
+if (!$result) {
+    http_response_code(500);
+    ob_clean();
+    echo json_encode(['error' => 'Login unavailable: database schema missing. Run installer/migrate.']);
+    exit;
+}
 
 if ($result->num_rows === 0) {
     http_response_code(401);

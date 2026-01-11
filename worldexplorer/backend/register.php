@@ -57,7 +57,12 @@ $stmt->close();
 
 // First user becomes admin, others player
 $countStmt = $conn->query("SELECT COUNT(*) as cnt FROM users");
-$row = $countStmt->fetch_assoc();
+if (!$countStmt || !($row = $countStmt->fetch_assoc())) {
+    http_response_code(500);
+    ob_clean();
+    echo json_encode(['ok'=>false,'error'=>'Registration unavailable: database schema missing. Run installer/migrate.']);
+    exit;
+}
 $isFirstUser = ($row['cnt'] == 0);
 $role = $isFirstUser ? 'admin' : 'player';
 
