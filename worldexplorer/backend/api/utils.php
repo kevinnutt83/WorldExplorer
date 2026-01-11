@@ -70,15 +70,6 @@ function db() {
     static $conn = null;
     
     if ($conn === null) {
-        // Ensure mysqli extension is available before attempting connection
-        if (!class_exists('mysqli')) {
-            if (ob_get_level()) ob_clean();
-            header('Content-Type: application/json');
-            http_response_code(500);
-            echo json_encode(['ok'=>false,'error'=>'PHP mysqli extension is missing. Enable it or re-run installer.']);
-            exit;
-        }
-
         // Load config if not already loaded
         if (!isset($AFTERLIGHT_CONFIG)) {
             $configPath = __DIR__ . '/../config.php';
@@ -133,7 +124,6 @@ function afterlight_ensure_schema(mysqli $conn): bool {
     $res = @$conn->query("SHOW TABLES LIKE 'users'");
     if ($res && $res->num_rows > 0) { $checked = true; return true; }
 
-    // Try running migrations using existing connection (best effort)
     $ok = false;
     $migratePath = __DIR__ . '/../db/migrate.php';
     if (is_file($migratePath)) {
@@ -142,6 +132,10 @@ function afterlight_ensure_schema(mysqli $conn): bool {
             try { $ok = afterlight_migrate_database($conn); } catch (Throwable $e) { al_log('error','db','Migration failed', ['err'=>$e->getMessage()]); }
         } elseif (function_exists('afterlight_run_migrations')) {
             try { $ok = afterlight_run_migrations(); } catch (Throwable $e) { al_log('error','db','Migration failed', ['err'=>$e->getMessage()]); }
+        }
+        // Always attempt post-migration upgrades to add missing columns (passhash, etc.)
+        if ($ok && function_exists('afterlight_schema_upgrades')) {
+            try { @afterlight_schema_upgrades($conn); } catch (Throwable $e) { al_log('error','db','Schema upgrade failed', ['err'=>$e->getMessage()]); }
         }
     }
     $checked = $ok;
@@ -246,4 +240,49 @@ function seed_demo_if_empty() {
 function al_column_exists(mysqli $conn, string $table, string $column): bool {
     $res = @$conn->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
     return $res && $res->num_rows > 0;
+}
+
+// Lightweight escape helper
+function esc($v){ return db()->real_escape_string((string)$v); }
+
+// Require auth or emit 401 JSON
+function require_auth(){
+  if (!authed_user()){
+    http_response_code(401);
+    json_out(['ok'=>false,'error'=>'auth_required']);
+    exit;
+  }
+}
+
+// Simple session-based rate limiter (per key)
+function rate_limit(string $key, int $maxPerMin): bool {
+  if (session_status() === PHP_SESSION_NONE) session_start();
+  $now = time();
+  $_SESSION['__rl'] = $_SESSION['__rl'] ?? [];
+  $_SESSION['__rl'][$key] = array_filter($_SESSION['__rl'][$key] ?? [], fn($t)=>$t > $now-60);
+  if (count($_SESSION['__rl'][$key]) >= $maxPerMin) return false;
+  $_SESSION['__rl'][$key][] = $now;
+  return true;
+}
+
+// Password helpers for legacy endpoints
+function hash_pass(string $p): string { return password_hash($p, PASSWORD_BCRYPT); }
+function verify_pass(string $p, string $h): bool { return password_verify($p, $h); }
+
+// Super admin helper
+function is_super_admin(array $user): bool {
+  global $AFTERLIGHT_CONFIG;
+  $supers = $AFTERLIGHT_CONFIG['super_admins'] ?? [];
+  return in_array(intval($user['id'] ?? 0), array_map('intval', $supers), true);
+}
+
+// Wallet helpers (no-op safe defaults)
+function wallet_get(int $userId): int {
+  $conn = db(); $res = $conn->query("SELECT balance FROM wallets WHERE user_id=$userId");
+  if ($res && $res->num_rows) return intval($res->fetch_assoc()['balance']);
+  return 0;
+}
+function wallet_add(int $userId, int $delta): void {
+  $conn = db();
+  $conn->query("INSERT INTO wallets (user_id,balance) VALUES ($userId,$delta) ON DUPLICATE KEY UPDATE balance = balance + $delta");
 }
