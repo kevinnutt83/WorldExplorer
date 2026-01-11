@@ -232,3 +232,8 @@ function seed_demo_if_empty() {
     }
     $stmt->close();
 }
+
+function al_column_exists(mysqli $conn, string $table, string $column): bool {
+    $res = @$conn->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
+    return $res && $res->num_rows > 0;
+}

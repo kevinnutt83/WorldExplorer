@@ -23,7 +23,9 @@ if (!$username_or_email || !$password) {
 }
 
 $conn = db();
-$stmt = $conn->prepare("SELECT id, username, email, passhash, role FROM users WHERE username = ? OR email = ? LIMIT 1");
+$pwdCol = al_column_exists($conn, 'users', 'passhash') ? 'passhash' : 'password';
+$sql = "SELECT id, username, email, role, {$pwdCol} AS passhash FROM users WHERE username = ? OR email = ? LIMIT 1";
+$stmt = $conn->prepare($sql);
 if (!$stmt) {
     http_response_code(500);
     ob_clean();

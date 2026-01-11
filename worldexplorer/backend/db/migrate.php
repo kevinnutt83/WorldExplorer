@@ -38,6 +38,12 @@ function afterlight_schema_upgrades(mysqli $conn): void {
 	while ($icol && ($c=$icol->fetch_assoc())) { $ihave[$c['Field']] = true; }
 	if (empty($ihave['consumable'])) { @$conn->query("ALTER TABLE items ADD COLUMN consumable TINYINT(1) NOT NULL DEFAULT 0"); }
 	if (empty($ihave['effects'])) { @$conn->query("ALTER TABLE items ADD COLUMN effects JSON NULL"); }
+
+	// Users: ensure passhash column exists (legacy installs used `password`)
+	$cols = $conn->query("SHOW COLUMNS FROM users"); $have = [];
+	while ($cols && ($c=$cols->fetch_assoc())) { $have[$c['Field']] = true; }
+	if (empty($have['passhash'])) { @$conn->query("ALTER TABLE users ADD COLUMN passhash VARCHAR(255) NULL AFTER email"); }
+	if (!empty($have['password']) && !empty($have['passhash'])) { @$conn->query("UPDATE users SET passhash = password WHERE passhash IS NULL"); }
 }
 
 function afterlight_migrate_database($conn) {

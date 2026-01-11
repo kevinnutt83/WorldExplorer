@@ -34,6 +34,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $conn = db();
+$pwdCol = al_column_exists($conn, 'users', 'passhash') ? 'passhash' : 'password';
 
 // Check existing
 $stmt = $conn->prepare("SELECT id FROM users WHERE username=? OR email=?");
@@ -61,7 +62,7 @@ $isFirstUser = ($row['cnt'] == 0);
 $role = $isFirstUser ? 'admin' : 'player';
 
 $hash = password_hash($password, PASSWORD_BCRYPT);
-$stmt = $conn->prepare("INSERT INTO users (username, email, passhash, role, name, phone, birth) VALUES (?, ?, ?, ?, ?, ?, ?)");
+$stmt = $conn->prepare("INSERT INTO users (username, email, {$pwdCol}, role, name, phone, birth) VALUES (?, ?, ?, ?, ?, ?, ?)");
 $stmt->bind_param('sssssss', $username, $email, $hash, $role, $name, $phone, $birth);
 
 if (!$stmt->execute()) {
