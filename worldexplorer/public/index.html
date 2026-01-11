@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- ...existing head code... -->
+  </head>
+  <body>
+    <!-- ...existing body code... -->
+    <div id="backend-status" class="alert hidden">Backend unreachable. Running in offline mode.</div>
+    <!-- ...existing code... -->
+    <script>
+      // ...existing script code...
+      const backendStatusEl = document.getElementById('backend-status');
+      const showBackendError = (msg) => {
+        backendStatusEl.textContent = msg;
+        backendStatusEl.classList.remove('hidden');
+      };
+      const hideBackendError = () => backendStatusEl.classList.add('hidden');
+
+      async function safeFetchJson(url, options = {}) {
+        const res = await fetch(url, options);
+        if (!res.ok) {
+          const text = await res.text();
+          console.error(`[backend] ${url} failed (${res.status})`, text);
+          throw new Error(`Backend ${res.status}`);
+        }
+        return res.json();
+      }
+
+      async function loadCurrentUser() {
+        try {
+          const me = await safeFetchJson('/backend/me');
+          hideBackendError();
+          // ...existing code that handles the user/me payload...
+        } catch (err) {
+          showBackendError('Unable to reach backend. Using guest mode.');
+          // ...existing code to fall back to guest/offline flow...
+        }
+      }
+
+      // ...existing code...
+      registerButton.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        // ...existing code that gathers form data...
+        try {
+          const payload = new FormData(registerForm);
+          const result = await safeFetchJson('/backend/register', { method: 'POST', body: payload });
+          hideBackendError();
+          // ...existing code that handles successful registration...
+        } catch (err) {
+          showBackendError('Registration failed. Please try again later.');
+        }
+      });
+      // ...existing code...
+    </script>
+  </body>
+</html>

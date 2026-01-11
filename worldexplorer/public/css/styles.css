@@ -105,3 +105,14 @@ input, button {
   .al-panel { left: 8px; right: 8px; width:auto; top: 80px; }
   .al-chat { left:8px; right:8px; width:auto; }
 }
+
+/* Backend status alert */
+.alert {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #c55042;
+  background: #1b0f10;
+  color: #fcd9d9;
+}
+.alert.hidden { display: none; }
